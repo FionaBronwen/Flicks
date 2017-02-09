@@ -18,10 +18,13 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     
     var movies: [NSDictionary]?
     var filteredData: [NSDictionary]!
+    var endpoint: String!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+    
         
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refreshControlAction(_:)), for: UIControlEvents.valueChanged)
@@ -33,6 +36,8 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         tableView.dataSource = self
         searchBar.delegate = self
         
+        self.navigationItem.titleView = self.searchBar
+        
         refreshControlAction(refreshControl)
         
        
@@ -41,8 +46,12 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     func refreshControlAction(_ refreshControl: UIRefreshControl) {
         
         let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
-        let url = URL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")!
-        let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
+        guard let ep = endpoint else {
+            refreshControl.endRefreshing()
+            return
+        }
+        let url = URL(string: "https://api.themoviedb.org/3/movie/\(ep)?api_key=\(apiKey)")
+        let request = URLRequest(url: url!, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
         MBProgressHUD.showAdded(to: self.view, animated: true)
@@ -87,19 +96,17 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         let movie = filteredData![indexPath.row]
         let title = movie["title"] as! String
         let overview = movie["overview"] as! String
-        let baseUrl = "http://image.tmdb.org/t/p/w342"
-        let posterPath = movie["poster_path"] as! String
-        
-        let imageUrl = NSURL(string: baseUrl + posterPath)
-
         cell.titleLabel.text = title
         cell.overviewLabel.text = overview
+        
+        let baseUrl = "http://image.tmdb.org/t/p/w342"
+        
+        if let posterPath = movie["poster_path"] as? String {
+        let imageUrl = NSURL(string: baseUrl + posterPath)
         cell.posterView.setImageWith(imageUrl as! URL)
+        }
         
-        
-        
-        
-        print ("row \(indexPath.row)")
+        //print ("row \(indexPath.row)")
         return cell 
     }
     
@@ -131,14 +138,21 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
 
-    /*
+    
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        let cell = sender as! UITableViewCell
+        let indexPath = tableView.indexPath(for: cell)
+        let filteredData = self.filteredData![indexPath!.row]
+        
+        let detailViewController = segue.destination as! DetailViewController
+        detailViewController.movie = filteredData
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
     }
-    */
+    
 
 }
