@@ -16,6 +16,8 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     
     @IBOutlet weak var searchBar: UISearchBar!
     
+    
+    
     var movies: [NSDictionary]?
     var filteredData: [NSDictionary]!
     var endpoint: String!
