@@ -10,12 +10,11 @@ import UIKit
 import AFNetworking
 import MBProgressHUD
 
-class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate {
+class MoviesViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate {
 
-    @IBOutlet weak var tableView: UITableView!
-    
     @IBOutlet weak var searchBar: UISearchBar!
     
+    @IBOutlet weak var collectionView: UICollectionView!
     
     
     var movies: [NSDictionary]?
@@ -31,11 +30,11 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refreshControlAction(_:)), for: UIControlEvents.valueChanged)
 
-        tableView.insertSubview(refreshControl, at: 0)
+        collectionView.insertSubview(refreshControl, at: 0)
 
         
-        tableView.delegate = self
-        tableView.dataSource = self
+        collectionView.delegate = self
+        collectionView.dataSource = self
         searchBar.delegate = self
         
         self.navigationItem.titleView = self.searchBar
@@ -44,6 +43,38 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         
        
     }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int{
+        
+        if let filteredData = self.filteredData {
+            return filteredData.count
+        } else{
+            return 0
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MovieCell", for: indexPath) as! MovieCell
+    
+        let movie = filteredData![indexPath.row]
+        //let title = movie["title"] as! String
+        //let overview = movie["overview"] as! String
+        //cell.titleLabel.text = title
+        //cell.overviewLabel.text = overview
+    
+        let baseUrl = "http://image.tmdb.org/t/p/w342"
+    
+        if let posterPath = movie["poster_path"] as? String {
+            let imageUrl = NSURL(string: baseUrl + posterPath)
+            cell.posterImage.setImageWith(imageUrl as! URL)
+        }
+        
+        
+        //print ("row \(indexPath.row)")
+        return cell
+    }
+
+    
     
     func refreshControlAction(_ refreshControl: UIRefreshControl) {
         
@@ -64,13 +95,13 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
                     print(dataDictionary)
                     
                     self.movies = dataDictionary["results"] as? [NSDictionary]
-                    self.tableView.reloadData()
+                    self.collectionView.reloadData()
                 }
             }
             self.filteredData = self.movies
             MBProgressHUD.hide(for: self.view, animated: true)
             
-            self.tableView.reloadData()
+            self.collectionView.reloadData()
             refreshControl.endRefreshing()
         }
         
@@ -84,33 +115,6 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         // Dispose of any resources that can be recreated.
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let filteredData = self.filteredData {
-            return filteredData.count
-        } else{
-            return 0
-        }
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell{
-        let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell", for: indexPath) as! MovieCell
-        
-        let movie = filteredData![indexPath.row]
-        let title = movie["title"] as! String
-        let overview = movie["overview"] as! String
-        cell.titleLabel.text = title
-        cell.overviewLabel.text = overview
-        
-        let baseUrl = "http://image.tmdb.org/t/p/w342"
-        
-        if let posterPath = movie["poster_path"] as? String {
-        let imageUrl = NSURL(string: baseUrl + posterPath)
-        cell.posterView.setImageWith(imageUrl as! URL)
-        }
-        
-        //print ("row \(indexPath.row)")
-        return cell 
-    }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         // When there is no text, filteredData is the same as the original data
@@ -126,7 +130,7 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         
         
         
-        tableView.reloadData()
+        collectionView.reloadData()
     }
     
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
@@ -146,8 +150,8 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         
-        let cell = sender as! UITableViewCell
-        let indexPath = tableView.indexPath(for: cell)
+        let cell = sender as! UICollectionViewCell
+        let indexPath = collectionView.indexPath(for: cell)
         let filteredData = self.filteredData![indexPath!.row]
         
         let detailViewController = segue.destination as! DetailViewController
